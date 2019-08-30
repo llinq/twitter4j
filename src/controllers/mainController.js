@@ -1,6 +1,7 @@
 'use strict';
 
-const loginService = require('../services/loginService');
+const loginService = require('../services/loginService'),
+    syncService = require('../services/syncService');
 
 exports.get = (req, res) => {
     const redisClient = req.app.locals.client;
@@ -12,7 +13,7 @@ exports.get = (req, res) => {
         }
 
         loginService.getToken(redisClient).then(token => {
-            
+            syncService.start(redisClient, token, req.params.user);
         });
     });
 
@@ -27,6 +28,6 @@ exports.get = (req, res) => {
 };
 
 exports.post = (req, res) => {
-    req.app.locals.client.set('teste', 'juãaao');
+    req.app.locals.client.set('synchronized-users', `["lnq_bot", "haga2112"]`);
     res.json();
 }

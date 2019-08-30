@@ -4,8 +4,10 @@ module.exports = (app) => {
     const testeController = require('../controllers/mainController');
 
     // todoList Routes
+    app.route('/teste/:user')
+        .get(testeController.get);
+
     app.route('/teste')
-        .get(testeController.get)
         .post(testeController.post);
 
     // app.route('/tasks/:taskId')
