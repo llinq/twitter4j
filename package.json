@@ -1,0 +1,24 @@
+{
+    "name": "twitter4j",
+    "version": "1.0.0",
+    "description": "Twitter with Neo4j",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "nodemon server.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/llinq/twitter4j"
+    },
+    "author": "João Costa",
+    "homepage": "https://github.com/llinq/twitter4j",
+    "devDependencies": {
+        "nodemon": "^1.11.0"
+    },
+    "dependencies": {
+        "body-parser": "^1.15.2",
+        "express": "^4.14.0",
+        "redis": "^2.8.0"
+    }
+}
