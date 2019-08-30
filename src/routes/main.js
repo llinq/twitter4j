@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function (app) {
+module.exports = (app) => {
     const testeController = require('../controllers/mainController');
 
     // todoList Routes

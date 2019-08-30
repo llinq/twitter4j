@@ -1,13 +1,23 @@
 'use strict';
 
-exports.get = function (req, res) {
+const loginService = require('../services/loginService');
 
-     req.app.locals.client.get('teste', function (err, response) {
+exports.get = (req, res) => {
+    const redisClient = req.app.locals.client;
 
-        res.json({
-            data: response
+    loginService.checkAuthorizationAlreadyExists(redisClient).then(async authorize => {
+        if (!authorize) {
+            console.log('genereting token');
+            await loginService.login(redisClient);
+        }
+
+        loginService.getToken(redisClient).then(token => {
+            
         });
-     });
+    });
+
+
+    res.json();
 
     // Task.find({}, function (err, task) {
     //     if (err)
@@ -16,7 +26,7 @@ exports.get = function (req, res) {
     // });
 };
 
-exports.post = function(req, res) {
+exports.post = (req, res) => {
     req.app.locals.client.set('teste', 'juãaao');
     res.json();
 }

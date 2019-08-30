@@ -11,7 +11,7 @@ const routes = require('./src/routes/main');
 
 routes(app);
 
-app.use(function (req, res) {
+app.use((req, res) => {
     res.status(404).send({ url: req.originalUrl + ' not found' })
 });
 
@@ -19,7 +19,7 @@ app.locals.client = redis.createClient({
     host: '192.168.99.100'
 });
 
-app.locals.client.on('connect', function () {
+app.locals.client.on('connect', () => {
     console.log('redis connected');
 });
 
