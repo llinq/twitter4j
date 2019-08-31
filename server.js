@@ -2,7 +2,8 @@ const express = require('express'),
     app = express(),
     port = process.env.PORT || 3000,
     bodyParser = require('body-parser'),
-    redis = require('redis');
+    redis = require('redis')
+    neo4j = require('neo4j-driver').v1;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -22,6 +23,8 @@ app.locals.client = redis.createClient({
 app.locals.client.on('connect', () => {
     console.log('redis connected');
 });
+
+app.locals.neo4j = neo4j;
 
 app.listen(port);
 
