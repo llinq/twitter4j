@@ -24,7 +24,7 @@ app.locals.client.on('connect', () => {
     console.log('redis connected');
 });
 
-app.locals.neo4j = neo4j;
+app.locals.driver = neo4j.driver('bolt://localhost:7687', neo4j.auth.basic('neo4j', '123mudar'));;
 
 app.listen(port);
 

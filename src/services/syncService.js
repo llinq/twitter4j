@@ -1,7 +1,9 @@
-const axios = require('axios');
+'use strict';
 
-function start(redisClient, token, user) {
+const axios = require('axios'),
+    neo4jService = require('../services/neo4jService');
 
+function start(redisClient, token, user, driver) {
     getSynchronizedUsers(redisClient).then(synchronizedUsersArray => {
         const alreadySynchronized = synchronizedUsersArray.filter(item => item === user);
 
@@ -11,14 +13,14 @@ function start(redisClient, token, user) {
             redisClient.get('next-user', (err, data) => {
                 const userData = JSON.parse(data);
 
-                callAPI(userData.user, userData.cursor, token, redisClient);
+                callAPI(userData.user, userData.cursor, token, redisClient, driver);
 
             });
 
         }
         else {
 
-            callAPI(user, -1, token, redisClient);
+            callAPI(user, -1, token, redisClient, driver);
 
         }
 
@@ -27,55 +29,65 @@ function start(redisClient, token, user) {
 
 }
 
-function callAPI(user, cursor, token, redisClient) {
-    axios.get(`https://api.twitter.com/1.1/followers/list.json?screen_name=${user}&skip_status=true&include_user_entities=true&count=200&cursor=${cursor}`, {
-        headers: {
-            'Authorization': token
-        }
-    }).then((response) => {
+async function callAPI(user, cursor, token, redisClient, driver) {
 
-        var ursersOrdered = response.data.users.sort((a, b) => (a.followers_count > b.followers_count) ? 1 : ((b.followers_count > a.followers_count) ? -1 : 0));
+    neo4jService.createUser(user, driver).then(() => {
 
-        var users = ursersOrdered.map((item) => item.screen_name);
+        axios.get(`https://api.twitter.com/1.1/followers/list.json?screen_name=${user}&skip_status=true&include_user_entities=true&count=200&cursor=${cursor}`, {
+            headers: {
+                'Authorization': token
+            }
+        }).then((response) => {
 
-        getUsersToSync(redisClient).then(data => {
+            var usersOrdered = response.data.users.sort((a, b) => (a.followers_count > b.followers_count) ? 1 : ((b.followers_count > a.followers_count) ? -1 : 0));
 
-            data.push(...users);
+            var users = usersOrdered.map((item) => item.screen_name);
 
-            redisClient.set('users-to-sync', JSON.stringify(data));
+            users.forEach(async userName => {
+                await neo4jService.createUser(userName, driver);
+                await neo4jService.createNode(userName, user, driver);
+            });
 
-            if (response.data.next_cursor > 0) {
+            getUsersToSync(redisClient).then(data => {
 
-                redisClient.set('next-user', JSON.stringify({
-                    user: user,
-                    cursor: response.data.next_cursor
-                }));
+                data.push(...users);
 
-                start(redisClient, token, user);
+                redisClient.set('users-to-sync', JSON.stringify(data));
+
+                if (response.data.next_cursor > 0) {
+
+                    redisClient.set('next-user', JSON.stringify({
+                        user: user,
+                        cursor: response.data.next_cursor
+                    }));
+
+                    start(redisClient, token, user, driver);
+                }
+                else {
+                    getSynchronizedUsers(redisClient).then(synchronizedUsersArray => {
+
+                        synchronizedUsersArray.push(user);
+
+                        redisClient.set('synchronized-users', JSON.stringify(synchronizedUsersArray));
+
+                        nextUser(user, redisClient, token, driver);
+                    });
+                }
+            });
+
+        }).catch(err => {
+            console.log('err');
+            if (err.response.status === 401) {
+                nextUser(user, redisClient, token, driver);
             }
             else {
-                getSynchronizedUsers(redisClient).then(synchronizedUsersArray => {
-
-                    synchronizedUsersArray.push(user);
-
-                    redisClient.set('synchronized-users', JSON.stringify(synchronizedUsersArray));
-
-                    nextUser(user, redisClient, token);
-                });
+                throw 'Rate limit';
             }
         });
-
-    }).catch(err => {
-        if (err.response.status === 401) {
-            nextUser(user, redisClient, token);
-        }
-        else {
-            throw 'Rate limit';
-        }
     });
 }
 
-function nextUser(atualUser, redisClient, token) {
+function nextUser(atualUser, redisClient, token, driver) {
     getUsersToSync(redisClient).then(usersToSync => {
 
         var differentUsers = usersToSync.filter(item => item !== atualUser);
@@ -96,7 +108,7 @@ function nextUser(atualUser, redisClient, token) {
                 cursor: -1
             }));
 
-            start(redisClient, token, userToSync);
+            start(redisClient, token, userToSync, driver);
         }
         else {
             console.log('acabou?');
