@@ -1,22 +1,22 @@
 'use strict';
 
 const axios = require('axios'),
-    qs = require('querystring');
+    qs = require('querystring'),
+    connectorFactory = require('../database/connector-factory'),
+    env = require('../config/environment');
 
-function login(redisClient) {
+function login() {
 
     return new Promise((resolve, reject) => {
 
         axios.post(
-            'https://api.twitter.com/oauth2/token',
-            qs.stringify({
-                'grant_type': 'client_credentials'
-            }),
+            env.twitter.url.login,
+            qs.stringify({ 'grant_type': 'client_credentials' }),
             {
                 responseType: 'application/json',
                 auth: {
-                    username: 'VflIwo8wlnHqXVmb0DMVGdztR',
-                    password: 'IoSBXujJUlwaFDRE6oKmOBFBnZBe8B0lPH219rl6BsXtl9m1gE'
+                    username: env.twitter.api_key,
+                    password: env.twitter.secret_key
                 },
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -24,7 +24,7 @@ function login(redisClient) {
             }
         ).then((result) => {
             if (result.status === 200) {
-                redisClient.set('Authorization', `${result.data.token_type} ${result.data.access_token}`);
+                connectorFactory.redisDriver.set('Authorization', `${result.data.token_type} ${result.data.access_token}`);
                 resolve();
             } else {
                 reject('Unexpected error');
@@ -36,10 +36,10 @@ function login(redisClient) {
     });
 }
 
-function getToken(redisClient) {
+function getToken() {
     return new Promise((resolve, reject) => {
         try {
-            redisClient.get('Authorization', (err, data) => {
+            connectorFactory.redisDriver.get('Authorization', (err, data) => {
                 if (err) {
                     reject(err);
                 }
@@ -53,10 +53,10 @@ function getToken(redisClient) {
     });
 }
 
-function checkAuthorizationAlreadyExists(redisClient) {
+function checkAuthorizationAlreadyExists() {
     return new Promise((resolve, reject) => {
         try {
-            getToken(redisClient).then(data => {
+            getToken().then(data => {
                 const response = (data && data !== null && data !== undefined);
                 resolve(response);
             }).catch(err => {

@@ -1,11 +1,13 @@
 'use strict';
 
-function createNode(user1, user2, driver) {
+const connectorFactory = require('../database/connector-factory');
+
+function createNode(user1, user2) {
 
     return new Promise((resolve, reject) => {
 
         try {
-            const session = driver.session();
+            const session = connectorFactory._neo4jDriver.session();
 
             const params = {
                 user1: user1,
@@ -36,7 +38,6 @@ function createNode(user1, user2, driver) {
 
                     promise1.then(result => {
                         session.close();
-                        console.log('chegou aqui');
                         resolve();
                     });
                 }
@@ -52,17 +53,17 @@ function createNode(user1, user2, driver) {
 
 }
 
-function createUser(username, driver) {
+function createUser(username) {
 
     return new Promise((resolve, reject) => {
 
-        checkUserAlreadyExists(username, driver).then(exists => {
+        checkUserAlreadyExists(username).then(exists => {
 
             if (exists) {
                 resolve()
             }
             else {
-                const session = driver.session();
+                const session = connectorFactory._neo4jDriver.session();
 
                 const promise = session.run(
                     'CREATE (u:User {username: $username}) RETURN u',
@@ -84,12 +85,12 @@ function createUser(username, driver) {
 
 }
 
-function checkUserAlreadyExists(username, driver) {
+function checkUserAlreadyExists(username) {
 
     return new Promise((resolve, reject) => {
 
         try {
-            const session = driver.session();
+            const session = connectorFactory.neo4jDriver.session();
 
             const resultPromise = session.run(
                 'MATCH (u:User {username: $username}) RETURN u',
@@ -100,16 +101,13 @@ function checkUserAlreadyExists(username, driver) {
                 session.close();
 
                 resolve(result.records.length > 0);
-
-                // on application exit:
-                // driver.close();
             });
 
         }
         catch (err) {
             reject(err);
         }
-    })
+    });
 
 }
 
