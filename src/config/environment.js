@@ -1,6 +1,7 @@
 const env = {
     redis: {
-        address: "192.168.99.100"
+        // address: "172.17.93.129"
+        address: "192.168.1.102"
     },
     neo4j: {
         address: "bolt://localhost:7687",

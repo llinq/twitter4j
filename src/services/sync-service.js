@@ -46,6 +46,10 @@ async function callAPI(user, cursor, token) {
             });
 
             getUsersToSync().then(data => {
+                if (data.length >= 100) {
+                    throw 'Users arrived at 100';
+                }
+                
                 data.push(...users);
 
                 connectorFactory._redisDriver.set('users-to-sync', JSON.stringify(data));

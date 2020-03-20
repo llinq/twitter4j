@@ -19,7 +19,9 @@ class connectorFactory {
     }
 
     static loadNeo4j() {
-        this.neo4jDriver = neo4j.driver(env.neo4j.address, neo4j.auth.basic(env.neo4j.user, env.neo4j.password));
+        this.neo4jDriver = neo4j.driver(env.neo4j.address, neo4j.auth.basic(env.neo4j.user, env.neo4j.password), {
+            encrypted: false
+        });
     }
 
     static get redisDriver() {
